@@ -37,9 +37,14 @@ export default function Game() {
   const mode = params.get('mode') || 'ai'; // 'ai' or 'local'
   const p1Skin = params.get('p1') || 'roman';
   const p2Skin = params.get('p2') || 'gaul';
+  const startParam = params.get('start') || 'p1';
 
   const [board, setBoard] = useState<BoardState>(Array(9).fill(null));
-  const [turn, setTurn] = useState<Player>('p1');
+  // Initialize turn based on start param
+  const [turn, setTurn] = useState<Player>(() => {
+    if (startParam === 'random') return Math.random() > 0.5 ? 'p1' : 'p2';
+    return startParam === 'p1' ? 'p1' : 'p2';
+  });
   const [phase, setPhase] = useState<GamePhase>('placement');
   const [winner, setWinner] = useState<Player | null>(null);
   const [winningLine, setWinningLine] = useState<number[] | null>(null);
@@ -58,7 +63,9 @@ export default function Game() {
 
   const handleReset = () => {
     setBoard(Array(9).fill(null));
-    setTurn('p1');
+    // Respect original start param on reset
+    const nextStart = startParam === 'random' ? (Math.random() > 0.5 ? 'p1' : 'p2') : (startParam === 'p1' ? 'p1' : 'p2');
+    setTurn(nextStart);
     setPhase('placement');
     setWinner(null);
     setWinningLine(null);
