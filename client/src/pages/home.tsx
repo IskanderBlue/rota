@@ -139,13 +139,15 @@ export default function Home() {
                     key={`p1-${skin.id}`}
                     onClick={() => skin.unlocked && setSelectedP1(skin.id)}
                     className={`
-                      w-10 h-10 rounded-full border-2 cursor-pointer transition-all hover:scale-110 relative
-                      ${selectedP1 === skin.id ? 'border-primary shadow-lg scale-110 z-10' : 'border-transparent opacity-60'}
-                      ${!skin.unlocked ? 'grayscale opacity-30 cursor-not-allowed' : ''}
+                      w-12 h-12 rounded-full border-2 cursor-pointer transition-all hover:scale-110 relative overflow-hidden bg-stone-800
+                      ${selectedP1 === skin.id ? 'border-primary ring-2 ring-primary ring-offset-2 ring-offset-[#f2efe9] scale-110 z-10 shadow-lg' : 'border-stone-500 opacity-60 grayscale hover:grayscale-0 hover:opacity-100'}
+                      ${!skin.unlocked ? 'opacity-30 cursor-not-allowed' : ''}
                     `}
                    >
-                     <img src={skin.img} className="w-full h-full object-cover" />
-                     {!skin.unlocked && <Lock className="absolute inset-0 m-auto w-4 h-4 text-stone-800" />}
+                     <img src={skin.img} className="w-full h-full object-cover scale-110" />
+                     {/* Gloss effect */}
+                     <div className="absolute inset-0 rounded-full bg-gradient-to-br from-white/30 to-transparent pointer-events-none mix-blend-overlay" />
+                     {!skin.unlocked && <Lock className="absolute inset-0 m-auto w-4 h-4 text-white drop-shadow-md" />}
                    </div>
                  ))}
               </div>
@@ -159,13 +161,15 @@ export default function Home() {
                     key={`p2-${skin.id}`}
                     onClick={() => skin.unlocked && setSelectedP2(skin.id)}
                     className={`
-                      w-10 h-10 rounded-full border-2 cursor-pointer transition-all hover:scale-110 relative
-                      ${selectedP2 === skin.id ? 'border-primary shadow-lg scale-110 z-10' : 'border-transparent opacity-60'}
-                      ${!skin.unlocked ? 'grayscale opacity-30 cursor-not-allowed' : ''}
+                      w-12 h-12 rounded-full border-2 cursor-pointer transition-all hover:scale-110 relative overflow-hidden bg-stone-800
+                      ${selectedP2 === skin.id ? 'border-primary ring-2 ring-primary ring-offset-2 ring-offset-[#f2efe9] scale-110 z-10 shadow-lg' : 'border-stone-500 opacity-60 grayscale hover:grayscale-0 hover:opacity-100'}
+                      ${!skin.unlocked ? 'opacity-30 cursor-not-allowed' : ''}
                     `}
                    >
-                     <img src={skin.img} className="w-full h-full object-cover" />
-                     {!skin.unlocked && <Lock className="absolute inset-0 m-auto w-4 h-4 text-stone-800" />}
+                     <img src={skin.img} className="w-full h-full object-cover scale-110" />
+                     {/* Gloss effect */}
+                     <div className="absolute inset-0 rounded-full bg-gradient-to-br from-white/30 to-transparent pointer-events-none mix-blend-overlay" />
+                     {!skin.unlocked && <Lock className="absolute inset-0 m-auto w-4 h-4 text-white drop-shadow-md" />}
                    </div>
                  ))}
               </div>
