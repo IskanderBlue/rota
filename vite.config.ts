@@ -48,5 +48,5 @@ export default defineConfig({
       deny: ["**/.*"],
     },
   },
-  base: process.env.GITHUB_PAGES ? "/rota/" : "/",
+  base: process.env.GITHUB_ACTIONS ? "/rota/" : "/",
 });
