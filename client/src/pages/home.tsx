@@ -20,8 +20,8 @@ import parthianHorse from '@assets/generated_images/parthian_horse_emblem.png';
 const SKINS = [
   { id: 'roman', name: 'Roman Legion', img: romanEagle, unlocked: true },
   { id: 'gaul', name: 'Gallic Tribes', img: gaulBoar, unlocked: true },
-  { id: 'carthage', name: 'Carthage', img: carthageTanit, unlocked: false },
-  { id: 'parthian', name: 'Parthian Empire', img: parthianHorse, unlocked: false },
+  { id: 'carthage', name: 'Carthage', img: carthageTanit, unlocked: true },
+  { id: 'parthian', name: 'Parthian Empire', img: parthianHorse, unlocked: true },
 ];
 
 export default function Home() {

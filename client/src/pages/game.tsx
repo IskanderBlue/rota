@@ -13,11 +13,26 @@ import {
 } from '@/lib/rota';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft, RotateCcw } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+
+// Images
+import romanEagle from '@assets/generated_images/roman_legion_eagle_emblem.png';
+import gaulBoar from '@assets/generated_images/celtic_gaul_boar_emblem.png';
+import carthageTanit from '@assets/generated_images/carthaginian_tanit_emblem.png';
+import parthianHorse from '@assets/generated_images/parthian_horse_emblem.png';
+
+const SKINS_INFO: Record<string, { name: string, winMsg: string }> = {
+  roman: { name: 'Roman Legion', winMsg: 'ROMA VICTRIX!' },
+  gaul: { name: 'Gallic Tribes', winMsg: 'GALLIA VICTRIX!' },
+  carthage: { name: 'Carthage', winMsg: 'CARTHAGO VICTRIX!' },
+  parthian: { name: 'Parthian Empire', winMsg: 'PARTHIA VICTRIX!' },
+};
 
 export default function Game() {
   const [location, setLocation] = useLocation();
   const search = useSearch();
   const params = new URLSearchParams(search);
+  const { toast } = useToast();
   
   const mode = params.get('mode') || 'ai'; // 'ai' or 'local'
   const p1Skin = params.get('p1') || 'roman';
@@ -89,6 +104,11 @@ export default function Game() {
 
     if (newCount >= 6) {
       setPhase('movement');
+      toast({
+        title: "All Units Deployed",
+        description: "Movement Phase Begins! Move your pieces to adjacent empty spots.",
+        duration: 3000,
+      });
     }
     
     setTurn(player === 'p1' ? 'p2' : 'p1');
@@ -160,12 +180,12 @@ export default function Game() {
         <p className="text-stone-600 font-medium">
           {winner ? (
              <span className="text-xl text-primary font-bold">
-               {winner === 'p1' ? 'Legion' : 'Invader'} Wins!
+               {winner === 'p1' ? SKINS_INFO[p1Skin]?.name : SKINS_INFO[p2Skin]?.name} Wins!
              </span>
           ) : (
             <span>
               Turn: <span className={turn === 'p1' ? 'text-primary font-bold' : 'text-blue-700 font-bold'}>
-                {turn === 'p1' ? 'Player 1' : 'Player 2'}
+                {turn === 'p1' ? SKINS_INFO[p1Skin]?.name : SKINS_INFO[p2Skin]?.name}
               </span>
             </span>
           )}
@@ -206,7 +226,7 @@ export default function Game() {
               className="bg-card border-2 border-primary/30 p-8 rounded-xl shadow-2xl max-w-sm w-full text-center"
             >
               <h1 className="text-4xl font-serif font-bold text-primary mb-4">
-                {winner === 'p1' ? 'ROMA VICTRIX!' : 'BARBARIAN VICTORY!'}
+                {winner === 'p1' ? SKINS_INFO[p1Skin]?.winMsg : SKINS_INFO[p2Skin]?.winMsg}
               </h1>
               <div className="flex flex-col gap-3">
                 <Button 

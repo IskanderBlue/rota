@@ -147,15 +147,15 @@ export function RotaBoard({
                   initial={{ scale: 0, rotate: -180 }}
                   animate={{ scale: 1, rotate: 0 }}
                   exit={{ scale: 0 }}
-                  className="w-full h-full rounded-full shadow-lg relative"
+                  className="w-full h-full rounded-full shadow-lg relative overflow-hidden border-2 border-stone-600/50"
                 >
                   <img 
                     src={tokenImg || ''} 
                     alt={cellValue} 
-                    className="w-full h-full object-cover drop-shadow-md"
+                    className="w-full h-full object-cover scale-110"
                   />
                   {/* Gloss effect */}
-                  <div className="absolute inset-0 rounded-full bg-gradient-to-br from-white/30 to-transparent pointer-events-none" />
+                  <div className="absolute inset-0 rounded-full bg-gradient-to-br from-white/30 to-transparent pointer-events-none mix-blend-overlay" />
                 </motion.div>
               )}
             </AnimatePresence>
