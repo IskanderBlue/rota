@@ -89,10 +89,6 @@ export default function Home() {
                 >
                   <Users className="mr-3 h-6 w-6" /> Local PvP
                 </Button>
-
-                <div className="text-center pt-4">
-                   <span className="text-stone-500 font-serif text-sm italic">Online Multiplayer Coming Soon</span>
-                </div>
               </motion.div>
             ) : (
               <motion.div
