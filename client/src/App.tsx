@@ -8,8 +8,9 @@ import Home from "@/pages/home";
 import Game from "@/pages/game";
 
 function AppRouter() {
+  const base = import.meta.env.BASE_URL.replace(/\/$/, "");
   return (
-    <WouterRouter base="/rota">
+    <WouterRouter base={base}>
       <Switch>
         <Route path="/" component={Home} />
         <Route path="/game" component={Game} />
