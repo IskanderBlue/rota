@@ -48,4 +48,5 @@ export default defineConfig({
       deny: ["**/.*"],
     },
   },
+  base: "/rota/",
 });
