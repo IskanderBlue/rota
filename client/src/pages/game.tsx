@@ -12,8 +12,15 @@ import {
   WINNING_LINES 
 } from '@/lib/rota';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, RotateCcw } from 'lucide-react';
+import { ArrowLeft, RotateCcw, HelpCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
 // Images
 import romanEagle from '@assets/generated_images/roman_legion_eagle_emblem.png';
@@ -169,7 +176,39 @@ export default function Game() {
         </Button>
       </div>
 
-      <div className="absolute top-4 right-4 z-20">
+      <div className="absolute top-4 right-4 z-20 flex gap-2">
+        <Dialog>
+          <DialogTrigger asChild>
+            <Button variant="ghost" size="icon" className="text-stone-700 hover:bg-stone-200/50">
+              <HelpCircle className="h-4 w-4" />
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="bg-[#f2efe9] border-stone-400 max-w-md">
+            <DialogHeader>
+              <DialogTitle className="text-2xl font-serif text-primary text-center">Rules of Engagement</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 font-serif text-stone-700">
+              <div className={`p-3 rounded-lg border ${phase === 'placement' ? 'bg-primary/10 border-primary' : 'bg-transparent border-transparent opacity-60'}`}>
+                <h3 className="font-bold text-lg mb-1">Phase I: Muster</h3>
+                <p>Players take turns placing one piece on the board in any open spot.</p>
+              </div>
+              
+              <div className={`p-3 rounded-lg border ${phase === 'movement' ? 'bg-primary/10 border-primary' : 'bg-transparent border-transparent opacity-60'}`}>
+                <h3 className="font-bold text-lg mb-1">Phase II: March</h3>
+                <p className="mb-2">After all the pieces are on the board, a player moves one piece each turn onto the next empty spot (along spokes or circle).</p>
+                <p className="font-bold text-sm uppercase mb-1">A player may not:</p>
+                <ul className="list-disc list-outside ml-4 space-y-1 text-sm">
+                  <li>Skip a turn, even if the move forces you to lose the game</li>
+                  <li>Jump over another piece</li>
+                  <li>Move more than one space</li>
+                  <li>Land on a space with a piece already on it</li>
+                  <li>Knock a piece off a space</li>
+                </ul>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+
         <Button variant="ghost" size="icon" className="text-stone-700 hover:bg-stone-200/50" onClick={handleReset}>
           <RotateCcw className="h-4 w-4" />
         </Button>
