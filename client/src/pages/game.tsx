@@ -213,15 +213,8 @@ export default function Game() {
   };
 
   const checkRepetition = (currentBoard: BoardState) => {
-    if (!wifeMode) return false;
-    
-    const boardStr = currentBoard.join(',');
-    const newHistory = [...history, boardStr];
-    setHistory(newHistory);
-
-    // Count occurrences
-    const count = newHistory.filter(s => s === boardStr).length;
-    return count >= 3;
+     // Deprecated in favor of inline check to avoid state closure issues
+     return false;
   };
 
   const handleReset = () => {
@@ -280,6 +273,12 @@ export default function Game() {
 
     if (newCount >= 6) {
       setPhase('movement');
+      
+      // Record the initial movement state in history so it counts as the 1st occurrence
+      if (wifeMode) {
+        setHistory([newBoard.join(',')]);
+      }
+
       toast({
         title: "All Units Deployed",
         description: "Movement Phase Begins! Move your pieces to adjacent empty spots.",
@@ -317,19 +316,31 @@ export default function Game() {
     }
 
     // Check Repetition (Wife Mode)
-    if (checkRepetition(newBoard)) {
-      // Starting player loses
-      const loser = actualStartingPlayer;
-      const winnerByDefault = loser === 'p1' ? 'p2' : 'p1';
-      setWinner(winnerByDefault);
-      setPhase('gameover');
-      toast({
-        title: "Stalemate Detected!",
-        description: "Threefold repetition rule invoked. Starting player loses.",
-        variant: "destructive",
-        duration: 5000
-      });
-      return;
+    if (wifeMode) {
+       const boardStr = newBoard.join(',');
+       const newHistory = [...history, boardStr];
+       setHistory(newHistory);
+       
+       const count = newHistory.filter(s => s === boardStr).length;
+       
+       if (count >= 3) {
+          // Starting player loses
+          const loser = actualStartingPlayer;
+          const winnerByDefault = loser === 'p1' ? 'p2' : 'p1';
+          
+          setWinner(winnerByDefault);
+          setPhase('gameover');
+          
+          const loserName = loser === 'p1' ? SKINS_INFO[p1Skin]?.name : SKINS_INFO[p2Skin]?.name;
+          
+          toast({
+            title: "Stalemate Detected!",
+            description: `Threefold repetition! As the starting player, ${loserName} loses the game.`,
+            variant: "destructive",
+            duration: 6000
+          });
+          return;
+       }
     }
 
     // Check threat for the CURRENT player (did I just create a threat?)
