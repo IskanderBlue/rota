@@ -200,7 +200,7 @@ export default function Home() {
                        "Wife-style" Rules
                     </label>
                     <p className="text-xs text-stone-500 font-serif max-w-[200px] leading-tight mt-1">
-                      If board repeats 3 times, the starting player loses.
+                      If the same board arrangement occurs 3 times, the starting player loses.
                     </p>
                   </div>
                   <Button 

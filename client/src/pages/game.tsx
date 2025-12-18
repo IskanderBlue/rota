@@ -422,6 +422,15 @@ export default function Game() {
                   <li>Knock a piece off a space</li>
                 </ul>
               </div>
+
+              {wifeMode && (
+                <div className="p-3 rounded-lg border bg-stone-200/50 border-stone-400/30">
+                  <h3 className="font-bold text-lg mb-1">Stalemate Resolution</h3>
+                  <p className="text-sm">
+                    <strong>"Wife-style" Rule:</strong> If the exact same board position repeats 3 times during the game, the player who started the game loses immediately.
+                  </p>
+                </div>
+              )}
             </div>
           </DialogContent>
         </Dialog>
