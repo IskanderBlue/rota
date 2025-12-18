@@ -41,6 +41,20 @@ export function checkWinner(board: BoardState): Player | null {
   return null;
 }
 
+export function checkForThreat(board: BoardState, player: Player): boolean {
+  // Check if player has 2 in a row with 3rd empty
+  for (const line of WINNING_LINES) {
+    const cells = line.map(idx => ({ idx, val: board[idx] }));
+    const playerCells = cells.filter(c => c.val === player);
+    const emptyCells = cells.filter(c => c.val === null);
+    
+    if (playerCells.length === 2 && emptyCells.length === 1) {
+      return true;
+    }
+  }
+  return false;
+}
+
 export function getValidMoves(board: BoardState, player: Player, phase: GamePhase, selectedIndex?: number): number[] {
   if (phase === 'placement') {
     // Can place anywhere empty

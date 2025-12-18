@@ -32,9 +32,10 @@ export default function Home() {
   const [selectedP1, setSelectedP1] = useState('roman');
   const [selectedP2, setSelectedP2] = useState('gaul');
   const [startingPlayer, setStartingPlayer] = useState<'p1' | 'p2' | 'random'>('random');
+  const [wifeMode, setWifeMode] = useState(false);
 
   const handleStartGame = () => {
-    setLocation(`/game?mode=${mode}&p1=${selectedP1}&p2=${selectedP2}&start=${startingPlayer}`);
+    setLocation(`/game?mode=${mode}&p1=${selectedP1}&p2=${selectedP2}&start=${startingPlayer}&wife=${wifeMode}`);
   };
 
   const handleModeSelect = (selectedMode: 'ai' | 'local') => {
@@ -190,6 +191,26 @@ export default function Home() {
                       P2
                     </Button>
                   </div>
+                </div>
+
+                {/* Wife Mode Toggle */}
+                <div className="pt-4 border-t border-stone-400/30 flex items-center justify-between">
+                  <div className="text-left">
+                    <label className="text-xs font-serif font-bold text-stone-600 uppercase tracking-widest block">
+                       "Wife-style" Rules
+                    </label>
+                    <p className="text-xs text-stone-500 font-serif max-w-[200px] leading-tight mt-1">
+                      If board repeats 3 times, the starting player loses.
+                    </p>
+                  </div>
+                  <Button 
+                    variant={wifeMode ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setWifeMode(!wifeMode)}
+                    className={`font-serif ${wifeMode ? 'bg-primary text-primary-foreground' : 'bg-transparent border-stone-400'}`}
+                  >
+                    {wifeMode ? 'Enabled' : 'Disabled'}
+                  </Button>
                 </div>
 
                 <Button 

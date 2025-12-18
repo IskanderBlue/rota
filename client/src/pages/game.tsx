@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useLocation, useSearch } from 'wouter';
 import { RotaBoard } from '@/components/RotaBoard';
 import { Button } from '@/components/ui/button';
@@ -9,10 +9,11 @@ import {
   checkWinner, 
   getValidMoves, 
   makeAiMove, 
+  checkForThreat,
   WINNING_LINES 
 } from '@/lib/rota';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, RotateCcw, HelpCircle } from 'lucide-react';
+import { ArrowLeft, RotateCcw, HelpCircle, Volume2, VolumeX } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import {
   Dialog,
@@ -28,11 +29,61 @@ import gaulBoar from '@assets/generated_images/celtic_gaul_boar_emblem.png';
 import carthageTanit from '@assets/generated_images/carthaginian_tanit_emblem.png';
 import parthianHorse from '@assets/generated_images/parthian_horse_emblem.png';
 
-const SKINS_INFO: Record<string, { name: string, winMsg: string }> = {
-  roman: { name: 'Roman Legion', winMsg: 'ROMA VICTRIX!' },
-  gaul: { name: 'Gallic Tribes', winMsg: 'GALLIA VICTRIX!' },
-  carthage: { name: 'Carthage', winMsg: 'CARTHAGO VICTRIX!' },
-  parthian: { name: 'Parthian Empire', winMsg: 'PARTHIA VICTRIX!' },
+const SKINS_INFO: Record<string, { name: string, winMsg: string, img: string }> = {
+  roman: { name: 'Roman Legion', winMsg: 'ROMA VICTRIX!', img: romanEagle },
+  gaul: { name: 'Gallic Tribes', winMsg: 'GALLIA VICTRIX!', img: gaulBoar },
+  carthage: { name: 'Carthage', winMsg: 'CARTHAGO VICTRIX!', img: carthageTanit },
+  parthian: { name: 'Parthian Empire', winMsg: 'PARTHIA VICTRIX!', img: parthianHorse },
+};
+
+// Audio Helper
+const playSound = (type: 'chime' | 'cheer' | 'move', enabled: boolean) => {
+  if (!enabled) return;
+  
+  const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+  
+  if (type === 'move') {
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(300, ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(100, ctx.currentTime + 0.1);
+    gain.gain.setValueAtTime(0.1, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.1);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start();
+    osc.stop(ctx.currentTime + 0.1);
+  }
+  else if (type === 'chime') {
+    // Simple major chord arpeggio
+    [523.25, 659.25, 783.99].forEach((freq, i) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'triangle';
+      osc.frequency.value = freq;
+      gain.gain.setValueAtTime(0.05, ctx.currentTime + i * 0.1);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + i * 0.1 + 0.5);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(ctx.currentTime + i * 0.1);
+      osc.stop(ctx.currentTime + i * 0.1 + 0.5);
+    });
+  } else if (type === 'cheer') {
+    // Victory fanfare ish
+    [523.25, 659.25, 783.99, 1046.50].forEach((freq, i) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'square';
+      osc.frequency.value = freq;
+      gain.gain.setValueAtTime(0.1, ctx.currentTime + i * 0.15);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + i * 0.15 + 0.8);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(ctx.currentTime + i * 0.15);
+      osc.stop(ctx.currentTime + i * 0.15 + 0.8);
+    });
+  }
 };
 
 export default function Game() {
@@ -41,23 +92,34 @@ export default function Game() {
   const params = new URLSearchParams(search);
   const { toast } = useToast();
   
-  const mode = params.get('mode') || 'ai'; // 'ai' or 'local'
+  const mode = params.get('mode') || 'ai'; 
   const p1Skin = params.get('p1') || 'roman';
   const p2Skin = params.get('p2') || 'gaul';
   const startParam = params.get('start') || 'p1';
+  const wifeMode = params.get('wife') === 'true';
 
   const [board, setBoard] = useState<BoardState>(Array(9).fill(null));
+  
   // Initialize turn based on start param
-  const [turn, setTurn] = useState<Player>(() => {
+  // We need to store the *actual* starting player for Wife Mode logic
+  const [actualStartingPlayer, setActualStartingPlayer] = useState<Player>(() => {
     if (startParam === 'random') return Math.random() > 0.5 ? 'p1' : 'p2';
     return startParam === 'p1' ? 'p1' : 'p2';
   });
+
+  const [turn, setTurn] = useState<Player>(actualStartingPlayer);
   const [phase, setPhase] = useState<GamePhase>('placement');
   const [winner, setWinner] = useState<Player | null>(null);
   const [winningLine, setWinningLine] = useState<number[] | null>(null);
   
   const [selectedPiece, setSelectedPiece] = useState<number | null>(null);
   const [pieceCount, setPieceCount] = useState(0);
+
+  // Audio State
+  const [soundEnabled, setSoundEnabled] = useState(true);
+
+  // History for repetition check
+  const [history, setHistory] = useState<string[]>([]);
 
   // Helper to find winning line visually
   const findWinningLine = (b: BoardState, p: Player) => {
@@ -68,16 +130,30 @@ export default function Game() {
     return null;
   };
 
+  const checkRepetition = (currentBoard: BoardState) => {
+    if (!wifeMode) return false;
+    
+    const boardStr = currentBoard.join(',');
+    const newHistory = [...history, boardStr];
+    setHistory(newHistory);
+
+    // Count occurrences
+    const count = newHistory.filter(s => s === boardStr).length;
+    return count >= 3;
+  };
+
   const handleReset = () => {
     setBoard(Array(9).fill(null));
-    // Respect original start param on reset
+    // Recalculate random start on reset if needed, or keep same? Usually reset = new game = new coin flip.
     const nextStart = startParam === 'random' ? (Math.random() > 0.5 ? 'p1' : 'p2') : (startParam === 'p1' ? 'p1' : 'p2');
+    setActualStartingPlayer(nextStart);
     setTurn(nextStart);
     setPhase('placement');
     setWinner(null);
     setWinningLine(null);
     setSelectedPiece(null);
     setPieceCount(0);
+    setHistory([]);
   };
 
   // AI Turn Effect
@@ -92,7 +168,7 @@ export default function Game() {
             performMovement(move.from!, move.to, 'p2');
           }
         }
-      }, 800); // Delay for realism
+      }, 800); 
       return () => clearTimeout(timer);
     }
   }, [turn, phase, board, winner, mode]);
@@ -101,15 +177,14 @@ export default function Game() {
     const newBoard = [...board];
     newBoard[index] = player;
     setBoard(newBoard);
+    playSound('move', soundEnabled);
     
-    // Check win (unlikely in placement but possible in some variants, though usually 3 pieces min)
-    // Rota usually doesn't end in placement unless blocked?
-    // We'll stick to: Check win immediately.
     const w = checkWinner(newBoard);
     if (w) {
       setWinner(w);
       setWinningLine(findWinningLine(newBoard, w));
       setPhase('gameover');
+      playSound('cheer', soundEnabled);
       return;
     }
 
@@ -125,7 +200,13 @@ export default function Game() {
       });
     }
     
-    setTurn(player === 'p1' ? 'p2' : 'p1');
+    const nextPlayer = player === 'p1' ? 'p2' : 'p1';
+    setTurn(nextPlayer);
+    
+    // Check threat for NEXT player (to warn them)
+    if (checkForThreat(newBoard, nextPlayer)) {
+       playSound('chime', soundEnabled);
+    }
   };
 
   const performMovement = (from: number, to: number, player: Player) => {
@@ -133,16 +214,41 @@ export default function Game() {
     newBoard[from] = null;
     newBoard[to] = player;
     setBoard(newBoard);
+    playSound('move', soundEnabled);
 
     const w = checkWinner(newBoard);
     if (w) {
       setWinner(w);
       setWinningLine(findWinningLine(newBoard, w));
       setPhase('gameover');
-    } else {
-      setTurn(player === 'p1' ? 'p2' : 'p1');
+      playSound('cheer', soundEnabled);
+      return;
     }
+
+    // Check Repetition (Wife Mode)
+    if (checkRepetition(newBoard)) {
+      // Starting player loses
+      const loser = actualStartingPlayer;
+      const winnerByDefault = loser === 'p1' ? 'p2' : 'p1';
+      setWinner(winnerByDefault);
+      setPhase('gameover');
+      toast({
+        title: "Stalemate Detected!",
+        description: "Threefold repetition rule invoked. Starting player loses.",
+        variant: "destructive",
+        duration: 5000
+      });
+      return;
+    }
+
+    const nextPlayer = player === 'p1' ? 'p2' : 'p1';
+    setTurn(nextPlayer);
     setSelectedPiece(null);
+
+    // Check threat for NEXT player
+    if (checkForThreat(newBoard, nextPlayer)) {
+       playSound('chime', soundEnabled);
+    }
   };
 
   const handleCellClick = (index: number) => {
@@ -177,6 +283,15 @@ export default function Game() {
       </div>
 
       <div className="absolute top-4 right-4 z-20 flex gap-2">
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          className="text-stone-700 hover:bg-stone-200/50"
+          onClick={() => setSoundEnabled(!soundEnabled)}
+        >
+          {soundEnabled ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
+        </Button>
+
         <Dialog>
           <DialogTrigger asChild>
             <Button variant="ghost" size="icon" className="text-stone-700 hover:bg-stone-200/50">
@@ -271,9 +386,23 @@ export default function Game() {
               animate={{ scale: 1, y: 0 }}
               className="bg-card border-2 border-primary/30 p-8 rounded-xl shadow-2xl max-w-sm w-full text-center"
             >
-              <h1 className="text-4xl font-serif font-bold text-primary mb-4">
-                {winner === 'p1' ? SKINS_INFO[p1Skin]?.winMsg : SKINS_INFO[p2Skin]?.winMsg}
-              </h1>
+              <div className="flex flex-col items-center gap-4">
+                <motion.div
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ type: "spring", stiffness: 200, damping: 20 }}
+                  className="w-24 h-24 rounded-full border-4 border-primary shadow-xl overflow-hidden bg-stone-800"
+                >
+                  <img 
+                    src={winner === 'p1' ? SKINS_INFO[p1Skin]?.img : SKINS_INFO[p2Skin]?.img} 
+                    alt="Winner Emblem" 
+                    className="w-full h-full object-cover"
+                  />
+                </motion.div>
+                <h1 className="text-4xl font-serif font-bold text-primary mb-2">
+                  {winner === 'p1' ? SKINS_INFO[p1Skin]?.winMsg : SKINS_INFO[p2Skin]?.winMsg}
+                </h1>
+              </div>
               <div className="flex flex-col gap-3">
                 <Button 
                   size="lg" 
