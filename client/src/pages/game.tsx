@@ -277,6 +277,8 @@ export default function Game() {
     const newCount = pieceCount + 1;
     setPieceCount(newCount);
 
+    const nextPhase = newCount >= 6 ? 'movement' : 'placement';
+
     if (newCount >= 6) {
       setPhase('movement');
       
@@ -294,7 +296,8 @@ export default function Game() {
     
     // Check threat for the CURRENT player (did I just create a threat?)
     // Warning sound should reflect the faction that IS THREATENING
-    if (checkForThreat(newBoard, player, 'placement')) { // We are technically still in placement logic here even if phase changes next render
+    // We use nextPhase to ensure we don't warn about "placement" threats when we've just switched to movement
+    if (checkForThreat(newBoard, player, nextPhase)) { 
        playSound('chime', soundEnabled, playerSkin);
     }
     
