@@ -37,51 +37,133 @@ const SKINS_INFO: Record<string, { name: string, winMsg: string, img: string }> 
 };
 
 // Audio Helper
-const playSound = (type: 'chime' | 'cheer' | 'move', enabled: boolean) => {
+const playSound = (type: 'chime' | 'cheer' | 'move', enabled: boolean, faction: string = 'roman') => {
   if (!enabled) return;
   
   const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+  const now = ctx.currentTime;
   
+  // Faction sound profiles
+  const profiles: any = {
+    roman: { type: 'sawtooth', baseFreq: 1.0, attack: 0.05, decay: 0.2 }, // Brass/Trumpet
+    gaul: { type: 'sawtooth', baseFreq: 0.7, attack: 0.1, decay: 0.4, detune: 100 }, // Carnyx/Horn (lower, rougher)
+    carthage: { type: 'triangle', baseFreq: 1.2, attack: 0.02, decay: 0.3, vibrato: true }, // Flute/Woodwind
+    parthian: { type: 'triangle', baseFreq: 1.1, attack: 0.01, decay: 0.15, pluck: true }, // String/Pluck
+  };
+
+  const profile = profiles[faction] || profiles.roman;
+
   if (type === 'move') {
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
-    osc.type = 'sine';
-    osc.frequency.setValueAtTime(300, ctx.currentTime);
-    osc.frequency.exponentialRampToValueAtTime(100, ctx.currentTime + 0.1);
-    gain.gain.setValueAtTime(0.1, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.1);
+    
+    // Plucky move sound
+    osc.type = profile.pluck ? 'triangle' : 'sine';
+    
+    if (faction === 'gaul') {
+       // Thud
+       osc.type = 'square';
+       osc.frequency.setValueAtTime(100, now);
+       osc.frequency.exponentialRampToValueAtTime(50, now + 0.1);
+    } else if (faction === 'parthian') {
+       // Sharp pluck
+       osc.frequency.setValueAtTime(400, now);
+       osc.frequency.exponentialRampToValueAtTime(200, now + 0.1);
+    } else {
+       // Standard click
+       osc.frequency.setValueAtTime(300, now);
+       osc.frequency.exponentialRampToValueAtTime(100, now + 0.1);
+    }
+
+    gain.gain.setValueAtTime(0.1, now);
+    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+    
     osc.connect(gain);
     gain.connect(ctx.destination);
     osc.start();
-    osc.stop(ctx.currentTime + 0.1);
+    osc.stop(now + 0.1);
   }
   else if (type === 'chime') {
-    // Simple major chord arpeggio
-    [523.25, 659.25, 783.99].forEach((freq, i) => {
+    // Threat detected - Warning sound
+    // Roman: Trumpet blast (perfect 5th)
+    // Gaul: Low horn blast
+    // Carthage: High flute trill
+    // Parthian: Rapid strum
+    
+    const notes = faction === 'roman' ? [523.25, 783.99] // C5, G5
+                : faction === 'gaul' ? [130.81, 196.00] // C3, G3 (Low)
+                : faction === 'carthage' ? [880.00, 1108.73] // A5, C#6
+                : [440.00, 554.37, 659.25]; // A4, C#5, E5 (Major triad)
+
+    notes.forEach((freq: number, i: number) => {
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
-      osc.type = 'triangle';
-      osc.frequency.value = freq;
-      gain.gain.setValueAtTime(0.05, ctx.currentTime + i * 0.1);
-      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + i * 0.1 + 0.5);
+      
+      osc.type = profile.type;
+      osc.frequency.value = freq * profile.baseFreq;
+      
+      if (profile.detune) osc.detune.value = Math.random() * 20 - 10;
+
+      const stagger = i * 0.1;
+      gain.gain.setValueAtTime(0, now + stagger);
+      gain.gain.linearRampToValueAtTime(0.1, now + stagger + profile.attack);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + stagger + profile.attack + profile.decay + 0.5);
+
+      if (profile.vibrato) {
+          const lfo = ctx.createOscillator();
+          lfo.frequency.value = 5;
+          const lfoGain = ctx.createGain();
+          lfoGain.gain.value = 10;
+          lfo.connect(lfoGain);
+          lfoGain.connect(osc.frequency);
+          lfo.start(now);
+          lfo.stop(now + 2);
+      }
+
       osc.connect(gain);
       gain.connect(ctx.destination);
-      osc.start(ctx.currentTime + i * 0.1);
-      osc.stop(ctx.currentTime + i * 0.1 + 0.5);
+      osc.start(now + stagger);
+      osc.stop(now + stagger + profile.attack + profile.decay + 0.6);
     });
+
   } else if (type === 'cheer') {
-    // Victory fanfare ish
-    [523.25, 659.25, 783.99, 1046.50].forEach((freq, i) => {
+    // Victory Fanfare
+    // Roman: Classic Fanfare
+    // Gaul: War Drums & Horns
+    // Carthage: Exotic Scale Run
+    // Parthian: Fast Arpeggio
+    
+    let melody: number[] = [];
+    let speed = 0.15;
+
+    if (faction === 'roman') {
+        melody = [523.25, 659.25, 783.99, 1046.50]; // C E G C
+    } else if (faction === 'gaul') {
+        melody = [196.00, 196.00, 261.63, 392.00]; // G G C G (Lower, rhythmic)
+        speed = 0.2;
+    } else if (faction === 'carthage') {
+        melody = [587.33, 622.25, 698.46, 783.99, 880.00]; // D Eb F G A (Arabic/Phrygian hint)
+        speed = 0.12;
+    } else if (faction === 'parthian') {
+        melody = [440, 554.37, 659.25, 880, 1108.73]; // A Major fast sweep
+        speed = 0.08;
+    }
+
+    melody.forEach((freq, i) => {
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
-      osc.type = 'square';
+      
+      osc.type = profile.type;
       osc.frequency.value = freq;
-      gain.gain.setValueAtTime(0.1, ctx.currentTime + i * 0.15);
-      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + i * 0.15 + 0.8);
+      
+      gain.gain.setValueAtTime(0, now + i * speed);
+      gain.gain.linearRampToValueAtTime(0.1, now + i * speed + 0.05);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + i * speed + 1.5);
+      
       osc.connect(gain);
       gain.connect(ctx.destination);
-      osc.start(ctx.currentTime + i * 0.15);
-      osc.stop(ctx.currentTime + i * 0.15 + 0.8);
+      osc.start(now + i * speed);
+      osc.stop(now + i * speed + 2.0);
     });
   }
 };
@@ -177,14 +259,19 @@ export default function Game() {
     const newBoard = [...board];
     newBoard[index] = player;
     setBoard(newBoard);
-    playSound('move', soundEnabled);
+    
+    // Play move sound for the player who just moved
+    const playerSkin = player === 'p1' ? p1Skin : p2Skin;
+    playSound('move', soundEnabled, playerSkin);
     
     const w = checkWinner(newBoard);
     if (w) {
       setWinner(w);
       setWinningLine(findWinningLine(newBoard, w));
       setPhase('gameover');
-      playSound('cheer', soundEnabled);
+      // Play cheer for winner
+      const winnerSkin = w === 'p1' ? p1Skin : p2Skin;
+      playSound('cheer', soundEnabled, winnerSkin);
       return;
     }
 
@@ -200,13 +287,14 @@ export default function Game() {
       });
     }
     
+    // Check threat for the CURRENT player (did I just create a threat?)
+    // Warning sound should reflect the faction that IS THREATENING
+    if (checkForThreat(newBoard, player, 'placement')) { // We are technically still in placement logic here even if phase changes next render
+       playSound('chime', soundEnabled, playerSkin);
+    }
+    
     const nextPlayer = player === 'p1' ? 'p2' : 'p1';
     setTurn(nextPlayer);
-    
-    // Check threat for NEXT player (to warn them)
-    if (checkForThreat(newBoard, nextPlayer)) {
-       playSound('chime', soundEnabled);
-    }
   };
 
   const performMovement = (from: number, to: number, player: Player) => {
@@ -214,14 +302,17 @@ export default function Game() {
     newBoard[from] = null;
     newBoard[to] = player;
     setBoard(newBoard);
-    playSound('move', soundEnabled);
+    
+    const playerSkin = player === 'p1' ? p1Skin : p2Skin;
+    playSound('move', soundEnabled, playerSkin);
 
     const w = checkWinner(newBoard);
     if (w) {
       setWinner(w);
       setWinningLine(findWinningLine(newBoard, w));
       setPhase('gameover');
-      playSound('cheer', soundEnabled);
+      const winnerSkin = w === 'p1' ? p1Skin : p2Skin;
+      playSound('cheer', soundEnabled, winnerSkin);
       return;
     }
 
@@ -241,14 +332,14 @@ export default function Game() {
       return;
     }
 
+    // Check threat for the CURRENT player (did I just create a threat?)
+    if (checkForThreat(newBoard, player, 'movement')) {
+       playSound('chime', soundEnabled, playerSkin);
+    }
+
     const nextPlayer = player === 'p1' ? 'p2' : 'p1';
     setTurn(nextPlayer);
     setSelectedPiece(null);
-
-    // Check threat for NEXT player
-    if (checkForThreat(newBoard, nextPlayer)) {
-       playSound('chime', soundEnabled);
-    }
   };
 
   const handleCellClick = (index: number) => {

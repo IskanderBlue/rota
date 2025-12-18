@@ -32,7 +32,7 @@ export default function Home() {
   const [selectedP1, setSelectedP1] = useState('roman');
   const [selectedP2, setSelectedP2] = useState('gaul');
   const [startingPlayer, setStartingPlayer] = useState<'p1' | 'p2' | 'random'>('random');
-  const [wifeMode, setWifeMode] = useState(false);
+  const [wifeMode, setWifeMode] = useState(true);
 
   const handleStartGame = () => {
     setLocation(`/game?mode=${mode}&p1=${selectedP1}&p2=${selectedP2}&start=${startingPlayer}&wife=${wifeMode}`);

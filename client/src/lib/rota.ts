@@ -41,15 +41,35 @@ export function checkWinner(board: BoardState): Player | null {
   return null;
 }
 
-export function checkForThreat(board: BoardState, player: Player): boolean {
+export function checkForThreat(board: BoardState, player: Player, phase: GamePhase): boolean {
   // Check if player has 2 in a row with 3rd empty
+  // AND if they can actually execute the win next turn
+  
   for (const line of WINNING_LINES) {
     const cells = line.map(idx => ({ idx, val: board[idx] }));
     const playerCells = cells.filter(c => c.val === player);
     const emptyCells = cells.filter(c => c.val === null);
     
     if (playerCells.length === 2 && emptyCells.length === 1) {
-      return true;
+      const emptySpotIndex = emptyCells[0].idx;
+
+      if (phase === 'placement') {
+        // In placement, any empty spot is valid unless game ends before (not possible here)
+        return true;
+      } else if (phase === 'movement') {
+        // In movement, the player must have a 3rd piece that is adjacent to the empty spot
+        // Find the player's pieces NOT in this line
+        const allPlayerPieces = board.map((c, i) => c === player ? i : -1).filter(i => i !== -1);
+        const piecesInLine = playerCells.map(c => c.idx);
+        const freePiece = allPlayerPieces.find(p => !piecesInLine.includes(p));
+        
+        if (freePiece !== undefined) {
+           const neighbors = ADJACENCY[freePiece];
+           if (neighbors.includes(emptySpotIndex)) {
+             return true;
+           }
+        }
+      }
     }
   }
   return false;
