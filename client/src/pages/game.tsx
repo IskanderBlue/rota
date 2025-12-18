@@ -37,10 +37,16 @@ const SKINS_INFO: Record<string, { name: string, winMsg: string, img: string }> 
 };
 
 // Audio Helper
+const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
+
 const playSound = (type: 'chime' | 'cheer' | 'move', enabled: boolean, faction: string = 'roman') => {
   if (!enabled) return;
   
-  const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+  if (audioCtx.state === 'suspended') {
+    audioCtx.resume();
+  }
+
+  const ctx = audioCtx;
   const now = ctx.currentTime;
   
   // Faction sound profiles
@@ -332,6 +338,8 @@ export default function Game() {
           setPhase('gameover');
           
           const loserName = loser === 'p1' ? SKINS_INFO[p1Skin]?.name : SKINS_INFO[p2Skin]?.name;
+          const winnerSkin = winnerByDefault === 'p1' ? p1Skin : p2Skin;
+          playSound('cheer', soundEnabled, winnerSkin);
           
           toast({
             title: "Stalemate Detected!",
