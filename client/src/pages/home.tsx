@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useLocation } from 'wouter';
 import { Button } from '@/components/ui/button';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -9,7 +9,7 @@ import {
   DialogTitle, 
   DialogTrigger 
 } from '@/components/ui/dialog';
-import { Lock, Swords, User, Users, Info, ArrowLeft, ArrowRight, Play } from 'lucide-react';
+import { Lock, Swords, User, Users, Info, ArrowLeft, ArrowRight, Play, Loader2 } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
 // Images
@@ -33,6 +33,23 @@ export default function Home() {
   const [selectedP2, setSelectedP2] = useState('gaul');
   const [startingPlayer, setStartingPlayer] = useState<'p1' | 'p2' | 'random'>('random');
   const [wifeMode, setWifeMode] = useState(true);
+  const [assetsLoaded, setAssetsLoaded] = useState(false);
+
+  useEffect(() => {
+    const preloadImages = async () => {
+      const promises = SKINS.map(skin => {
+        return new Promise((resolve) => {
+          const img = new Image();
+          img.src = skin.img;
+          img.onload = resolve;
+          img.onerror = resolve; // Fail gracefully
+        });
+      });
+      await Promise.all(promises);
+      setAssetsLoaded(true);
+    };
+    preloadImages();
+  }, []);
 
   const handleStartGame = () => {
     setLocation(`/game?mode=${mode}&p1=${selectedP1}&p2=${selectedP2}&start=${startingPlayer}&wife=${wifeMode}`);
@@ -42,6 +59,15 @@ export default function Home() {
     setMode(selectedMode);
     setStep('setup');
   };
+
+  if (!assetsLoaded) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-[#f2efe9] text-stone-600 font-serif">
+        <Loader2 className="h-10 w-10 animate-spin text-primary mb-4" />
+        <p className="tracking-widest uppercase text-sm">Mustering Forces...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex flex-col md:flex-row bg-[#f2efe9] relative overflow-hidden">
