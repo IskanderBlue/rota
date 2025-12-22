@@ -12,7 +12,6 @@ import {
 import { Lock, Swords, User, Users, Info, ArrowLeft, ArrowRight, Play, Loader2 } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
-// Images
 import romanEagle from '@assets/generated_images/roman_legion_eagle_emblem.png';
 import gaulBoar from '@assets/generated_images/celtic_gaul_boar_emblem.png';
 import carthageTanit from '@assets/generated_images/carthaginian_tanit_emblem.png';
@@ -71,10 +70,8 @@ export default function Home() {
 
   return (
     <div className="min-h-screen flex flex-col md:flex-row bg-[#f2efe9] relative overflow-hidden">
-      {/* Background Overlay */}
       <div className="absolute inset-0 bg-gradient-to-b from-stone-900/10 to-stone-900/30 pointer-events-none z-0" />
 
-      {/* Left Panel: Game UI */}
       <div className="flex-1 flex flex-col items-center justify-center p-6 z-10 relative">
         <motion.div 
           initial={{ y: -20, opacity: 0 }}

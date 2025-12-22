@@ -3,7 +3,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { BoardState, Player, GamePhase, ADJACENCY } from '@/lib/rota';
 import { cn } from '@/lib/utils';
 
-// Images
 import romanEagle from '@assets/generated_images/roman_legion_eagle_emblem.png';
 import gaulBoar from '@assets/generated_images/celtic_gaul_boar_emblem.png';
 import carthageTanit from '@assets/generated_images/carthaginian_tanit_emblem.png';
@@ -40,9 +39,7 @@ export function RotaBoard({
   winningLine
 }: RotaBoardProps) {
 
-  // Coordinates for the 9 points (0 is center)
-  // 0: Center (50, 50)
-  // 1-8: Rim (Clockwise starting from top)
+  // Board coordinates: 0 is center, 1-8 are rim (clockwise from top)
   const radius = 35;
   const center = 50;
   

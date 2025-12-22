@@ -31,6 +31,10 @@ export const ADJACENCY: Record<number, number[]> = {
   8: [0, 7, 1]
 };
 
+/**
+ * Checks if the current board state has a winner.
+ * Returns the winning player ('p1' or 'p2') or null.
+ */
 export function checkWinner(board: BoardState): Player | null {
   for (const line of WINNING_LINES) {
     const [a, b, c] = line;
@@ -41,10 +45,11 @@ export function checkWinner(board: BoardState): Player | null {
   return null;
 }
 
+/**
+ * Checks if a player has a winning threat (2 in a row with the 3rd spot accessible).
+ * Used for warning chimes and AI blocking logic.
+ */
 export function checkForThreat(board: BoardState, player: Player, phase: GamePhase): boolean {
-  // Check if player has 2 in a row with 3rd empty
-  // AND if they can actually execute the win next turn
-  
   for (const line of WINNING_LINES) {
     const cells = line.map(idx => ({ idx, val: board[idx] }));
     const playerCells = cells.filter(c => c.val === player);
@@ -88,12 +93,11 @@ export function getValidMoves(board: BoardState, player: Player, phase: GamePhas
   return [];
 }
 
+/**
+ * Calculates the best move for the AI.
+ * Priority: Win -> Block Opponent -> Strategic Center -> Random Valid.
+ */
 export function makeAiMove(board: BoardState, phase: GamePhase, aiPlayer: Player): { from?: number, to: number } | null {
-  // 1. Check for winning move
-  // 2. Check for blocking move
-  // 3. Random valid move
-  
-  // Helper to simulate move
   const tryMove = (b: BoardState, idx: number, player: Player) => {
     const newB = [...b];
     newB[idx] = player;

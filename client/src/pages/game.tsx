@@ -23,7 +23,6 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 
-// Images
 import romanEagle from '@assets/generated_images/roman_legion_eagle_emblem.png';
 import gaulBoar from '@assets/generated_images/celtic_gaul_boar_emblem.png';
 import carthageTanit from '@assets/generated_images/carthaginian_tanit_emblem.png';
@@ -36,9 +35,12 @@ const SKINS_INFO: Record<string, { name: string, winMsg: string, img: string }> 
   parthian: { name: 'Parthian Empire', winMsg: 'PARTHIA VICTRIX!', img: parthianHorse },
 };
 
-// Audio Helper
 const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
 
+/**
+ * Plays game sound effects using Web Audio API.
+ * Handles browser auto-play policy by resuming context on interaction.
+ */
 const playSound = (type: 'chime' | 'cheer' | 'move', enabled: boolean, faction: string = 'roman') => {
   if (!enabled) return;
   
@@ -49,7 +51,6 @@ const playSound = (type: 'chime' | 'cheer' | 'move', enabled: boolean, faction: 
   const ctx = audioCtx;
   const now = ctx.currentTime;
   
-  // Faction sound profiles
   const profiles: any = {
     roman: { type: 'sawtooth', baseFreq: 1.0, attack: 0.05, decay: 0.2 }, // Brass/Trumpet
     gaul: { type: 'sawtooth', baseFreq: 0.7, attack: 0.1, decay: 0.4, detune: 100 }, // Carnyx/Horn (lower, rougher)
@@ -203,7 +204,6 @@ export default function Game() {
   const [selectedPiece, setSelectedPiece] = useState<number | null>(null);
   const [pieceCount, setPieceCount] = useState(0);
 
-  // Audio State - persist in localStorage
   const [soundEnabled, setSoundEnabled] = useState(() => {
     const saved = localStorage.getItem('rota_sound_enabled');
     return saved !== null ? JSON.parse(saved) : true;
@@ -217,21 +217,14 @@ export default function Game() {
     });
   };
 
-  // History for repetition check
   const [history, setHistory] = useState<string[]>([]);
 
-  // Helper to find winning line visually
   const findWinningLine = (b: BoardState, p: Player) => {
     for (const line of WINNING_LINES) {
       const [x, y, z] = line;
       if (b[x] === p && b[y] === p && b[z] === p) return line;
     }
     return null;
-  };
-
-  const checkRepetition = (currentBoard: BoardState) => {
-     // Deprecated in favor of inline check to avoid state closure issues
-     return false;
   };
 
   const handleReset = () => {
@@ -248,7 +241,6 @@ export default function Game() {
     setHistory([]);
   };
 
-  // AI Turn Effect
   useEffect(() => {
     if (mode === 'ai' && turn === 'p2' && !winner) {
       const timer = setTimeout(() => {
