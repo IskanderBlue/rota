@@ -203,8 +203,19 @@ export default function Game() {
   const [selectedPiece, setSelectedPiece] = useState<number | null>(null);
   const [pieceCount, setPieceCount] = useState(0);
 
-  // Audio State
-  const [soundEnabled, setSoundEnabled] = useState(true);
+  // Audio State - persist in localStorage
+  const [soundEnabled, setSoundEnabled] = useState(() => {
+    const saved = localStorage.getItem('rota_sound_enabled');
+    return saved !== null ? JSON.parse(saved) : true;
+  });
+
+  const toggleSound = () => {
+    setSoundEnabled((prev: boolean) => {
+      const newValue = !prev;
+      localStorage.setItem('rota_sound_enabled', JSON.stringify(newValue));
+      return newValue;
+    });
+  };
 
   // History for repetition check
   const [history, setHistory] = useState<string[]>([]);
@@ -400,7 +411,7 @@ export default function Game() {
           variant="ghost" 
           size="icon" 
           className="text-stone-700 hover:bg-stone-200/50"
-          onClick={() => setSoundEnabled(!soundEnabled)}
+          onClick={toggleSound}
         >
           {soundEnabled ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
         </Button>
